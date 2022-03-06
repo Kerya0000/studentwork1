@@ -1,127 +1,48 @@
-#Приветствие
-print("Добро пожаловать в игру крестики-нолики.\n"
-      "Ваша задача - выстроить подряд три крестика.\n"
-      "Победа также будет засчитана, если крестики выставлены по диагонали\n"
-      "Координаты нужно вводить через запятую без пробелов\n"
-      "Сначала вводится ордината 'y', затем абсцисса 'x'\n"
-      "Вводить координаты уже занятой крестиком или ноликом клетки нельзя\n"
-      "Удачи!")
+import telebot
+from config import keys, TOKEN
+from extensions import ConvertionException, CryptoConverter
 
-print("------------------------------------------------")
-#Скелет поля для игры
-a, b, c, d, e, f, g, h, i = "-","-","-","-","-","-","-","-","-"
 
-print(f"  1 2 3")
-print(f"1 {a} {b} {c}")
-print(f"2 {d} {e} {f}")
-print(f"3 {g} {h} {i}")
+bot = telebot.TeleBot(TOKEN)
 
-print("------------------------------------------------")
 
-#Игровая логика
-count = 0
 
-while count <= 9:
-    #Ход первого игрока
-    Player1 = input("Введите координаты для крестика:")
-    if Player1 == "1,1":
-        a = "x"
-    elif Player1 == "1,2":
-        b = "x"
-    elif Player1 == "1,3":
-        c = "x"
-    elif Player1 == "2,1":
-        d = "x"
-    elif Player1 == "2,2":
-        e = "x"
-    elif Player1 == "2,3":
-        f = "x"
-    elif Player1 == "3,1":
-        g = "x"
-    elif Player1 == "3,2":
-        h = "x"
-    elif Player1 == "3,3":
-        i = "x"
 
-    count += 1
+@bot.message_handler(commands = ["start", "help"])
+def help(message: telebot.types.Message):
+    text = "Чтобы начать пользоваться ботом введите команду в следующем формате:\n <имя валюты> \
+<в какую валюту перевести> \
+<количество переводимой валюты>\n Увидеть список всех доступных валют: команда /values"
+    bot.reply_to(message, text)
 
-    print(f"  1 2 3")
-    print(f"1 {a} {b} {c}")
-    print(f"2 {d} {e} {f}")
-    print(f"3 {g} {h} {i}")
-    #Условия победы первого игрока
-    if a == "x" and b == "x" and c == "x":
-        print("Победил первый игрок")
-        break
-    elif d == "x" and e == "x" and f == "x":
-        print("Победил первый игрок")
-        break
-    elif g == "x" and h == "x" and i == "x":
-        print("Победил первый игрок")
-        break
-    elif a == "x" and e == "x" and i == "x":
-        print("Победил первый игрок")
-        break
-    elif a == "x" and d == "x" and g == "x":
-        print("Победил первый игрок")
-        break
-    elif b == "x" and e == "x" and h == "x":
-        print("Победил первый игрок")
-        break
-    elif c == "x" and f == "x" and i == "x":
-        print("Победил первый игрок")
-        break
+@bot.message_handler(commands = ["values"])
+def values(message: telebot.types.Message):
+    text = "Доступные валюты: "
+    for key in keys.keys():
+        text = "\n".join((text, key, ))
+    bot.reply_to(message, text)
 
-    #Ход второго игрока
-    Player2 = input("Введите координаты для нолика:")
+@bot.message_handler(content_types = ["text", ])
+def get_price(message: telebot.types.Message):
+    try:
+        values = message.text.split(' ')
 
-    if Player2 == "1,1":
-        a = "0"
-    elif Player2 == "1,2":
-        b = "0"
-    elif Player2 == "1,3":
-        c = "0"
-    elif Player2 == "2,1":
-        d = "0"
-    elif Player2 == "2,2":
-        e = "0"
-    elif Player2 == "2,3":
-        f = "0"
-    elif Player2 == "3,1":
-        g = "0"
-    elif Player2 == "3,2":
-        h = "0"
-    elif Player2 == "3,3":
-        i = "0"
+        if len(values) > 3:
+            raise ConvertionException("Слишком много параметров :(")
 
-    count += 1
+        quote, base, amount = values
+        total_base = CryptoConverter.get_price(quote, base, amount)
 
-    print(f"  1 2 3")
-    print(f"1 {a} {b} {c}")
-    print(f"2 {d} {e} {f}")
-    print(f"3 {g} {h} {i}")
+    except ConvertionException as e:
+        bot.reply_to(message, f"Ошибка пользователя :(\n {e}")
 
-    # Условия победы второго игрока
-    if a == "0" and b == "0" and c == "0":
-        print("Победил второй игрок")
-        break
-    elif d == "0" and e == "0" and f == "0":
-        print("Победил второй игрок")
-        break
-    elif g == "0" and h == "0" and i == "0":
-        print("Победил второй игрок")
-        break
-    elif a == "0" and e == "0" and i == "0":
-        print("Победил второй игрок")
-        break
-    elif a == "0" and d == "0" and g == "0":
-        print("Победил второй игрок")
-        break
-    elif b == "0" and e == "0" and h == "0":
-        print("Победил второй игрок")
-        break
-    elif c == "0" and f == "0" and i == "0":
-        print("Победил второй игрок")
-        break
+    except Exception as e:
+        bot.reply_to(message, f"Не удалось обработать коанду :(\n {e}")
+    else:
+        total_base = float(total_base)
+        amount = int(amount)
+        text = f"Цена {amount} {quote} в {base} - {round(total_base * amount, 2)}"
+        bot.send_message(message.chat.id, text)
 
-print("Игра окончена")
+bot.polling()
+
