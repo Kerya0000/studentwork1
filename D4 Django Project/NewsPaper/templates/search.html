@@ -1,0 +1,40 @@
+{% extends 'flatpages/default.html' %}
+
+{% block title %} Сортируем Новости {% endblock title %}
+
+{% block content %}
+<form method="GET">
+    {{ filter.form }} <!-- Форму от фильтров за нас сделает django. А вот кнопку, увы придётся делать самому -->
+    <input type="submit" value="Найти">
+</form>
+
+<table>
+    <thead>
+        <th>
+            Дата
+        </th>
+        <th>
+            Название
+        </th>
+        <th>
+            Автор
+        </th>
+    </thead>
+    {% for searchpost in filter.qs %} <!-- поменяем products на filter.qs, т. к. теперь мы забираем уже отобранную по каким-то параметрам информацию -->
+    <tr>
+        <td>
+            {{ searchpost.dateCreation| date:'d M Y'}}
+        </td>
+        <td>
+            {{ searchpost.title }}
+        </td>
+        <td>
+            {{ searchpost.author }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h6><a href="{% url 'dieHauptSeite' %}">К списку новостей</a> <br></h6>
+
+{% endblock content %}
